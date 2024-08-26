@@ -1,7 +1,7 @@
 import { User, id, init, lookup, tx } from "@instantdb/react";
 import { Background, Controls, ReactFlow } from "@xyflow/react";
 import { useEffect, useRef, useState } from "react";
-import { Db } from "../client";
+import { Db } from "../app/client";
 
 interface Props {
   db: Db;

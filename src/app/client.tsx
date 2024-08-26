@@ -1,9 +1,9 @@
 "use client";
 
 import { init } from "@instantdb/react";
-import { InstantSchema } from "./types/schema";
+import { InstantSchema } from "../types/schema";
 import { useEffect } from "react";
-import { App } from "./components/App";
+import { App } from "../components/App";
 
 const db = init<InstantSchema>({
   appId: "c7a8aae8-5bfc-43e7-9be1-6f439475a114",
