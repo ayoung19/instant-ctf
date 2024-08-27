@@ -18,13 +18,15 @@ export const Client = ({ token }: Props) => {
   const auth = db.useAuth();
 
   useEffect(() => {
-    if (auth.user === undefined) {
-      db.auth.signInWithToken(token);
-    }
-  }, [auth.user]);
+    db.auth.signInWithToken(token);
+  }, [token]);
 
   if (auth.error) {
     return <div>{auth.error.message}</div>;
+  }
+
+  if (auth.isLoading) {
+    <div>loading...</div>;
   }
 
   if (auth.user) {

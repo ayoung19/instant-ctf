@@ -1,5 +1,5 @@
-import { User, id, init, lookup, tx } from "@instantdb/react";
-import { Background, Controls, ReactFlow } from "@xyflow/react";
+import { User, tx } from "@instantdb/react";
+import { Background, ReactFlow } from "@xyflow/react";
 import { useEffect, useRef, useState } from "react";
 import { Db } from "../app/client";
 
@@ -9,56 +9,91 @@ interface Props {
 }
 
 export const App = ({ db, user }: Props) => {
-  const [movement, setMovement] = useState({ x: 0, y: 0 });
+  const playersQuery = db.useQuery({ players: {} });
+  const [_, setPosition] = useState({ x: 0, y: 0 });
+
+  const movementControlRef = useRef({
+    up: 0,
+    left: 0,
+    down: 0,
+    right: 0,
+  });
 
   useEffect(() => {
     document.addEventListener("keydown", (e) => {
       switch (e.code) {
         case "KeyW":
-          setMovement((prevState) => ({ ...prevState, y: prevState.y + 1 }));
+          movementControlRef.current.up = 1;
+          return;
         case "KeyA":
-          setMovement((prevState) => ({ ...prevState, y: prevState.x - 1 }));
+          movementControlRef.current.left = 1;
+          return;
         case "KeyS":
-          setMovement((prevState) => ({ ...prevState, y: prevState.y - 1 }));
+          movementControlRef.current.down = 1;
+          return;
         case "KeyD":
-          setMovement((prevState) => ({ ...prevState, y: prevState.x + 1 }));
+          movementControlRef.current.right = 1;
+          return;
       }
     });
 
     document.addEventListener("keyup", (e) => {
       switch (e.code) {
         case "KeyW":
-          setMovement((prevState) => ({ ...prevState, y: prevState.y - 1 }));
+          movementControlRef.current.up = 0;
+          return;
         case "KeyA":
-          setMovement((prevState) => ({ ...prevState, y: prevState.x + 1 }));
+          movementControlRef.current.left = 0;
+          return;
         case "KeyS":
-          setMovement((prevState) => ({ ...prevState, y: prevState.y + 1 }));
+          movementControlRef.current.down = 0;
+          return;
         case "KeyD":
-          setMovement((prevState) => ({ ...prevState, y: prevState.x - 1 }));
+          movementControlRef.current.right = 0;
+          return;
       }
     });
   }, []);
 
   useEffect(() => {
-    db.transact([
-      tx.movements[lookup("playerId", user.id)].update({
-        x: movement.x,
-        y: movement.y,
-      }),
-    ]);
-  }, [movement.x, movement.y]);
+    const interval = setInterval(() => {
+      const movementVector = {
+        x: movementControlRef.current.right - movementControlRef.current.left,
+        y: movementControlRef.current.down - movementControlRef.current.up,
+      };
+
+      if (movementVector.x === 0 && movementVector.y === 0) {
+        return;
+      }
+
+      setPosition(({ x, y }) => {
+        const newPosition = {
+          x: x + 5 * movementVector.x,
+          y: y + 5 * movementVector.y,
+        };
+
+        db.transact([
+          tx.players[user.id].update({
+            position: newPosition,
+          }),
+        ]);
+
+        return newPosition;
+      });
+    }, 1000 / 64);
+
+    return () => clearInterval(interval);
+  }, [user.id, movementControlRef]);
 
   return (
     <div className="h-full w-full">
       <ReactFlow
-        nodes={[
-          {
-            id: "1",
-            type: "input",
-            data: { label: "Input Node" },
-            position: { x: 0, y: 0 },
-          },
-        ]}
+        nodes={(playersQuery.data?.players || []).map((player) => ({
+          id: player.id,
+          type: "input",
+          data: { label: player.id },
+          position: player.position,
+        }))}
         panOnDrag={false}
         zoomOnScroll={false}
         zoomOnDoubleClick={false}
